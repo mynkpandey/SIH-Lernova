@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Guidance Chatbot</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-graduation-cap"></i> Career Guidance Assistant</h1>
+                <p>Your personal AI career advisor</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2><i class="fas fa-comments"></i> Career Chat</h2>
+                    <button class="clear-btn" id="clearChat">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot-message">
+                        <div class="message-content">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-text">
+                                <p>Hello! I'm your career guidance assistant. I can help you explore career options, 
+                                provide guidance on career paths, and even draft a comprehensive career guide for any 
+                                specific career choice you're interested in. How can I assist you today?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="userInput" 
+                            placeholder="Ask about career options, guidance, or request a career guide..."
+                            rows="1"
+                        ></textarea>
+                        <button id="sendButton" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-lightbulb"></i> Quick Suggestions</h3>
+                    <div class="suggestion-buttons">
+                        <button class="suggestion-btn" data-prompt="What are some high-demand careers in technology?">
+                            Tech Careers
+                        </button>
+                        <button class="suggestion-btn" data-prompt="How do I become a software engineer?">
+                            Software Engineering
+                        </button>
+                        <button class="suggestion-btn" data-prompt="What healthcare careers are in high demand?">
+                            Healthcare Careers
+                        </button>
+                        <button class="suggestion-btn" data-prompt="Draft a career guide for data science">
+                            Data Science Guide
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-graduation-cap"></i> Educational Background</h3>
+                    <div class="dropdown-group">
+                        <select id="backgroundSelect" class="dropdown-select">
+                            <option value="">Select your background</option>
+                            <option value="science">Science</option>
+                            <option value="commerce">Commerce</option>
+                            <option value="arts">Arts</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-briefcase"></i> Career Fields</h3>
+                    <div class="dropdown-group">
+                        <select id="careerFieldSelect" class="dropdown-select" disabled>
+                            <option value="">Select a career field</option>
+                            <!-- Dynamic options will be loaded here -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-cog"></i> Career Guide Generator</h3>
+                    <div class="guide-generator">
+                        <input 
+                            type="text" 
+                            id="careerInput" 
+                            placeholder="Or enter a specific career"
+                            class="guide-input"
+                        >
+                        <button id="generateGuide" class="generate-btn">
+                            <i class="fas fa-file-alt"></i> Generate Guide
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-trophy"></i> Exam Recommendations</h3>
+                    <div class="guide-generator">
+                        <input 
+                            type="text" 
+                            id="examCareerInput" 
+                            placeholder="Enter career for exam info"
+                            class="guide-input"
+                        >
+                        <button id="getExamRecommendations" class="generate-btn">
+                            <i class="fas fa-graduation-cap"></i> Get Exam Info
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-info-circle"></i> About</h3>
+                    <p>This AI-powered career assistant helps you explore career options and create personalized 
+                    career guides using advanced AI technology.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Generating career guidance...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
