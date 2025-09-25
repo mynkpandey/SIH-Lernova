@@ -49,7 +49,7 @@ Response format examples:
 
 Enforce word limits strictly. Be direct and to the point.`;
 
-// API endpoint for career guidance chat
+// API endpoint for career guidance chat (streaming)
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, history } = req.body;
@@ -70,35 +70,34 @@ app.post('/api/chat', async (req, res) => {
         fullPrompt += `user: ${message}\n`;
         fullPrompt += 'assistant: ';
 
-        // Call Gemini API
-        const result = await model.generateContent(fullPrompt);
-        const response = await result.response;
-        const aiResponse = response.text();
+        // Call Gemini API with streaming
+        const result = await model.generateContentStream(fullPrompt);
+        
+        // Set headers for streaming response
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
-        res.json({ response: aiResponse });
+        // Stream the response
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            if (chunkText) {
+                res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunkText })}\n\n`);
+            }
+        }
+
+        // Send completion event
+        res.write(`data: ${JSON.stringify({ type: 'complete', content: '' })}\n\n`);
+        res.end();
         
     } catch (error) {
         console.error('Gemini API Error:', error);
         
-        // Handle different types of errors
-        if (error.message.includes('API key')) {
-            res.status(401).json({ 
-                error: 'Authentication error', 
-                message: 'Invalid Gemini API key' 
-            });
-        } else if (error.message.includes('network')) {
-            // Network error
-            res.status(503).json({ 
-                error: 'Network error', 
-                message: 'Unable to connect to AI service' 
-            });
-        } else {
-            // Other errors
-            res.status(500).json({ 
-                error: 'Internal server error', 
-                message: error.message 
-            });
-        }
+        // Send error event for streaming
+        res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`);
+        res.end();
     }
 });
 
@@ -175,8 +174,8 @@ app.listen(PORT, () => {
     console.log(`🌐 Open http://localhost:${PORT} to access the application`);
     
     // Check if API key is configured
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === GEMINI_API_KEY) {
-        console.warn('⚠️  WARNING: Gemini API key not configured or using default value');
+    if (!process.env.GEMINI_API_KEY) {
+        console.warn('⚠️  WARNING: Gemini API key not configured');
         console.warn('   Please check your .env file and ensure GEMINI_API_KEY is set correctly');
     } else {
         console.log('✅ Gemini API key is configured');

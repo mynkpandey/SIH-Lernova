@@ -84,11 +84,18 @@ class CareerGuidanceChatbot {
         this.showLoading();
 
         try {
-            // Get AI response with fallback
+            // Get AI response with streaming
             const response = await this.getAIResponseWithFallback(message);
             
-            // Add AI response to chat
-            this.addMessage(response, 'bot');
+            // Remove streaming indicator and finalize the message
+            const streamingMessage = document.getElementById('streaming-message');
+            if (streamingMessage) {
+                streamingMessage.removeAttribute('id');
+                const messageDiv = streamingMessage.closest('.message');
+                if (messageDiv) {
+                    messageDiv.removeAttribute('data-streaming');
+                }
+            }
             
             // Update conversation history
             this.conversationHistory.push(
@@ -103,6 +110,13 @@ class CareerGuidanceChatbot {
             
         } catch (error) {
             console.error('Error:', error);
+            
+            // Remove streaming indicator on error
+            const streamingMessage = document.getElementById('streaming-message');
+            if (streamingMessage) {
+                streamingMessage.closest('.message').remove();
+            }
+            
             this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
         } finally {
             this.hideLoading();
@@ -154,38 +168,65 @@ class CareerGuidanceChatbot {
     }
 
     async getAIResponse(message) {
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message,
-                    history: this.conversationHistory
-                })
-            });
+        return new Promise(async (resolve, reject) => {
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: this.conversationHistory
+                    })
+                });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.substring(6));
+                            
+                            if (data.type === 'chunk') {
+                                fullResponse += data.content;
+                                // Update the last message with streaming content
+                                this.updateStreamingMessage(fullResponse);
+                            } else if (data.type === 'error') {
+                                throw new Error(data.content);
+                            } else if (data.type === 'complete') {
+                                resolve(fullResponse);
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                console.error('API Error:', error);
+                reject(error);
             }
-
-            const data = await response.json();
-            return data.response;
-            
-        } catch (error) {
-            console.error('API Error:', error);
-            
-            // Fallback response if API fails
-            return `I apologize, but I'm currently unable to connect to the career guidance service. ` +
-                   `This might be due to network issues or service maintenance. ` +
-                   `Please try again in a few moments.`;
-        }
+        });
     }
 
-    addMessage(content, type) {
+    addMessage(content, type, isStreaming = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}-message`;
+        if (isStreaming) {
+            messageDiv.setAttribute('data-streaming', 'true');
+        }
         
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
@@ -202,6 +243,7 @@ class CareerGuidanceChatbot {
         
         const paragraph = document.createElement('div');
         paragraph.className = 'message-content-text';
+        paragraph.id = isStreaming ? 'streaming-message' : undefined;
         
         // Apply markdown formatting to bot messages only
         if (type === 'bot') {
@@ -217,6 +259,20 @@ class CareerGuidanceChatbot {
         
         this.chatMessages.appendChild(messageDiv);
         this.scrollToBottom();
+        
+        return messageDiv;
+    }
+
+    updateStreamingMessage(content) {
+        let streamingMessage = document.getElementById('streaming-message');
+        if (!streamingMessage) {
+            // Create a new streaming message if one doesn't exist
+            this.addMessage(content, 'bot', true);
+        } else {
+            // Update existing streaming message
+            streamingMessage.innerHTML = renderMarkdown(content);
+            this.scrollToBottom();
+        }
     }
 
     clearChat() {
