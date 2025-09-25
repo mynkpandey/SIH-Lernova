@@ -200,11 +200,12 @@ class CareerGuidanceChatbot {
         const textDiv = document.createElement('div');
         textDiv.className = 'message-text';
         
-        const paragraph = document.createElement('p');
+        const paragraph = document.createElement('div');
+        paragraph.className = 'message-content-text';
         
-        // Apply formatting to bot messages only
+        // Apply markdown formatting to bot messages only
         if (type === 'bot') {
-            paragraph.textContent = formatCareerGuideResponse(content);
+            paragraph.innerHTML = renderMarkdown(content);
         } else {
             paragraph.textContent = content;
         }
@@ -470,67 +471,48 @@ document.addEventListener('DOMContentLoaded', () => {
     new CareerGuidanceChatbot();
 });
 
-// Utility function for formatting career guide responses
-function formatCareerGuideResponse(response) {
-    // Remove all markdown formatting and clean up the text
-    let formattedResponse = response;
+// Utility function for rendering markdown content
+function renderMarkdown(text) {
+    if (!text) return '';
     
-    // Remove all markdown headings and section numbers
-    formattedResponse = formattedResponse.replace(/^#{1,4}\s*(Career Guide:|\d+\.\s*[A-Za-z\s]+:)/gmi, '');
-    formattedResponse = formattedResponse.replace(/^#{1,4}\s*/gmi, '');
+    let html = text;
     
-    // Remove specific patterns like "#### 1. Overview and Job Description:"
-    formattedResponse = formattedResponse.replace(/\d+\.\s*[A-Za-z\s]+:/gmi, '');
+    // Headers (h1-h6)
+    html = html.replace(/^######\s+(.+?)\s*$/gm, '<h6>$1</h6>');
+    html = html.replace(/^#####\s+(.+?)\s*$/gm, '<h5>$1</h5>');
+    html = html.replace(/^####\s+(.+?)\s*$/gm, '<h4>$1</h4>');
+    html = html.replace(/^###\s+(.+?)\s*$/gm, '<h3>$1</h3>');
+    html = html.replace(/^##\s+(.+?)\s*$/gm, '<h2>$1</h2>');
+    html = html.replace(/^#\s+(.+?)\s*$/gm, '<h1>$1</h1>');
     
-    // Remove any remaining markdown artifacts
-    formattedResponse = formattedResponse.replace(/\*\*/g, '');
-    formattedResponse = formattedResponse.replace(/\* /g, ' ');
-    formattedResponse = formattedResponse.replace(/ \*/g, ' ');
+    // Bold and italic
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/_(.*?)_/g, '<em>$1</em>');
     
-    // Clean up extra spaces
-    formattedResponse = formattedResponse.replace(/\s+/g, ' ');
-    formattedResponse = formattedResponse.replace(/  +/g, ' ');
+    // Lists - unordered (bullet points)
+    html = html.replace(/^\s*[-*+]\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^\s*•\s+(.+)$/gm, '<li>$1</li>');
     
-    // Process numbered lists properly with preserved line breaks
-    const lines = formattedResponse.split('\n');
-    let result = [];
-    let listCounter = 1;
-    let inList = false;
+    // Lists - ordered (numbered)
+    html = html.replace(/^\s*\d+\.\s+(.+)$/gm, '<li>$1</li>');
     
-    for (let line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) {
-            result.push(''); // Preserve empty lines
-            continue;
-        }
-        
-        // Handle numbered lists and bullet points
-        if (trimmedLine.match(/^\d+\.\s/) || trimmedLine.match(/^[\*\-\+•]\s+/)) {
-            if (!inList) {
-                inList = true;
-                listCounter = 1;
-            }
-            
-            // Convert bullet points to proper numbering
-            let processedLine = trimmedLine;
-            if (trimmedLine.match(/^[\*\-\+•]\s+/)) {
-                processedLine = listCounter + '. ' + trimmedLine.substring(trimmedLine.indexOf(' ') + 1);
-            }
-            result.push(processedLine);
-            listCounter++;
+    // Wrap lists in proper ul/ol tags
+    html = html.replace(/(<li>.*<\/li>)/gs, function(match) {
+        // Check if it's likely an ordered list (contains numbers)
+        if (match.match(/\d+\./)) {
+            return '<ol>' + match + '</ol>';
         } else {
-            if (inList) {
-                inList = false;
-                result.push(''); // Add empty line after list
-            }
-            result.push(trimmedLine);
+            return '<ul>' + match + '</ul>';
         }
-    }
+    });
     
-    formattedResponse = result.join('\n');
+    // Line breaks
+    html = html.replace(/\n\n/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
     
-    // Add double line breaks after sentences
-    formattedResponse = formattedResponse.replace(/\.\s+/g, '.\n\n');
+    // Clean up any empty list items
+    html = html.replace(/<li><\/li>/g, '');
     
-    return formattedResponse.trim();
+    return html;
 }
