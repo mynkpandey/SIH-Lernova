@@ -447,7 +447,15 @@ class CareerGuidanceChatbot {
             // Fallback responses for common career queries
             const lowerMessage = message.toLowerCase();
             
-            if (lowerMessage.includes('commerce') || lowerMessage.includes('accounting') || lowerMessage.includes('finance')) {
+            // Check for education refusal queries first
+            if (lowerMessage.includes('don\'t want to pursue') || 
+                lowerMessage.includes('no education') || 
+                lowerMessage.includes('without degree') ||
+                lowerMessage.includes('not interested in education') ||
+                lowerMessage.includes('skip education') ||
+                lowerMessage.includes('avoid college')) {
+                return this.getEducationRefusalFallbackResponse(message);
+            } else if (lowerMessage.includes('commerce') || lowerMessage.includes('accounting') || lowerMessage.includes('finance')) {
                 return this.getCommerceFallbackResponse(message);
             } else if (lowerMessage.includes('science') || lowerMessage.includes('engineering') || lowerMessage.includes('medical')) {
                 return this.getScienceFallbackResponse(message);
@@ -519,6 +527,28 @@ class CareerGuidanceChatbot {
 **Top Recruiters:** Media houses, schools, government, design firms
 
 **Growth Prospects:** Good with experience and networking.`;
+    }
+
+    // Fallback response for education refusal queries
+    getEducationRefusalFallbackResponse(message) {
+        return `I understand you're considering not pursuing further education. Here's an honest comparison:
+
+**Degree vs No Degree - Key Differences:**
+• **Doors:** Degree opens many opportunities; some roles require it
+• **Growth:** Degree enables faster salary progression long-term
+• **Stability:** Degree provides job security; no degree can mean uncertainty
+• **Networks:** College builds professional connections; otherwise build alone
+• **Pivoting:** Degree makes career changes easier; no degree can limit options
+• **Respect:** Degree brings social credibility; no degree may face silent bias
+
+**Without Degree Paths:**
+• **Skilled Trades:** Electricians, plumbers (₹3-8 LPA)
+• **Sales:** Commission-based roles (₹4-15 LPA)
+• **Entrepreneurship:** Start your own business
+• **Digital Skills:** Freelancing, content creation
+• **Certifications:** Short-term skill-based programs
+
+**Consider:** Many successful people without degrees still built great careers through skills, networking, and continuous learning. The path may be different but not impossible.`;
     }
 }
 
